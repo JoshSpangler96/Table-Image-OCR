@@ -40,6 +40,85 @@ pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files (x86)\\Tesseract-OCR\
 ```
  to your script. (replace path of tesseract binary if necessary)
  
+ ## Methods
+ 
+ ```python
+ def __init__(self, image_path: str, tesseract_path: str, show=False):
+ ```
+ Initializes the object
+ image_path: str -> path to chart image you are trying to read
+ tesseract_path: str -> On Windows you will need to give a path to tesseract.exe
+
+ 
+ ```python
+ def dilate_img(self) -> None:
+ ```
+ dilates the image using cv2.dilate w/ kernel = np.ones((3, 3), np.uint8)
+ 
+  ```python
+ def gaussian_blur(self) -> None:
+ ```
+ blurs the image using cv2.GaussianBlur
+ 
+ ```python
+ def grayscale(self) -> None:
+ ```
+ grayscales the image using cv2.cvtColor(<img path>, cv2.COLOR_BGR2GRAY)
+ 
+ ```python
+ def canny_img(self) -> None:
+ ```
+ alters the image using cv2.Canny
+ 
+ ```python
+ def morph_img(self) -> None:
+ ```
+ morphs the image using cv2.morphologyEx
+ 
+ ```python
+ def pre_process_image(self) -> None:
+ ```
+ diates, then blurs, then grayscales, then canny, then morphs image
+ 
+ ```python
+ def auto_resize_image(self) -> None:
+ ```
+Resizes the image so that either the height, width, or both are ~7000
+
+ ```python
+ def create_lines(self, rho=1, threshold=50, min_line_length=500, theta=(np.pi/180), max_line_gap=20) -> None:
+ ```
+ Defines the table lines with the above default values (values can be changed)
+ 
+ ```python
+ @staticmethod
+ def __is_vertical(line, vert_tolerance: int) -> bool:
+ ```
+ returns whether the line is vertical or not based on vertical tolerance (how far x1 and x2 can be apart to still be considered vertical); default value of 100
+ 
+ ```python
+ @staticmethod
+ def __is_horizontal(line, horizontal_tolerance: int) -> bool:
+ ```
+ returns whether the line is horizontal or not based on horizontal tolerance (how far y1 and y2 can be apart to still be considered vertical); default value of 100
+ 
+ ```python
+ def __overlapping_filter(self, lines: list, sorting_index: int, overlapping_tolerance=None) -> list:
+ ```
+ Combines overlapping lines based on a tolerance given; default overlapping tolerance = 50
+ 
+ ```python
+ ```
+  
+ ```python
+ ```
+  
+ ```python
+ ```
+  
+ ```python
+ ```
+ 
  ## Example Usage
  
 ```python
