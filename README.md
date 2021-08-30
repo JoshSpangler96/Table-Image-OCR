@@ -45,7 +45,7 @@ pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files (x86)\\Tesseract-OCR\
 ```python
 from png_table_ocr import ReadTableImage
 
-filename = 'test_3.png'
+filename = 'test_1.png'
 
 img = ReadTableImage(image_path=filename, tesseract_path=(r'C:\Users\JSPANGLER\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'), show=False)
 img.auto_resize_image()
