@@ -1,4 +1,4 @@
-# png_table_ocr
+# table_img_ocr
 Description:
 Uses Optical Character Recognition (OCR) to read a table from a 'png'
 
