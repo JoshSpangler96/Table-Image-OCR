@@ -36,7 +36,7 @@ brew install tesseract
 
 ### On Windows 
 download binary from https://github.com/UB-Mannheim/tesseract/wiki. then add
-```bash
+```python
 pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files (x86)\\Tesseract-OCR\\tesseract.exe'
 ```
  to your script. (replace path of tesseract binary if necessary)
