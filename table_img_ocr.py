@@ -281,10 +281,10 @@ class ReadTableImage:
     @staticmethod
     def read_img(img) -> str:
 
-        kernel = np.ones((3, 3), np.uint8)
+        kernel = np.ones((1, 1), np.uint8)
         img_dilated = cv2.dilate(img, kernel, iterations=1)
-        img_blurred = cv2.GaussianBlur(img_dilated, (0, 0), 3)
-        gray = cv2.cvtColor(img_blurred, cv2.COLOR_BGR2GRAY)
+        img_erode = cv2.erode(img_dilated, kernel, iterations=1)
+        gray = cv2.cvtColor(img_erode, cv2.COLOR_BGR2GRAY)
         sharpen_kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
         sharpen = cv2.filter2D(gray, -1, sharpen_kernel)
         thresh = cv2.threshold(sharpen, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
@@ -292,7 +292,8 @@ class ReadTableImage:
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
         close = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=1)
         result = 255 - close
-        txt = pytesseract.image_to_string(result, config='--psm 12 --oem 3').strip()
+        txt = pytesseract.image_to_string(result, lang='eng', config='--psm 12 --oem 3').strip()
+        txt = txt.replace('|', '')
 
         return txt
 
@@ -352,9 +353,8 @@ class ReadTableImage:
         with open(csv_results, 'w') as file:
             for line in self.results:
                 row = ''
-                for i in range(len(line)):
-                    line[i] = str(line[i]).replace('|', '')
-                    row += str(line[i]) + ','
+                for item in line:
+                    row += str(item) + ','
                 file.write(row + '\n')
 
 
