@@ -37,7 +37,11 @@ class ReadTableImage:
         scalar = min(scalar_options)
         if scalar <= 0:
             scalar = 1
-        self.img = cv2.resize(self.img, (self.img_width * scalar, self.img_height * scalar))
+        self.img = cv2.resize(
+            self.img,
+            (self.img_width * scalar, self.img_height * scalar),
+            interpolation=cv2.INTER_CUBIC
+        )
         self.cImage = self.img
         self.img_height, self.img_width, self.img_channels = self.img.shape
         if self.show:
@@ -287,7 +291,7 @@ class ReadTableImage:
         gray = cv2.cvtColor(img_erode, cv2.COLOR_BGR2GRAY)
         sharpen_kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
         sharpen = cv2.filter2D(gray, -1, sharpen_kernel)
-        thresh = cv2.threshold(sharpen, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        thresh = cv2.threshold(cv2.medianBlur(sharpen, 3), 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
 
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
         close = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=1)
