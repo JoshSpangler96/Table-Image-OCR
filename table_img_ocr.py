@@ -8,10 +8,11 @@ class ReadTableImage:
 
     def __init__(self, image_path: str, tesseract_path=None, show=False):
         self.image_path = image_path
+        self.show = show
         self.tesseract_path = tesseract_path
         if self.tesseract_path is not None:
             pytesseract.pytesseract.tesseract_cmd = self.tesseract_path
-        self.show = show
+
         try:
             self.img = cv2.imread(cv2.samples.findFile(self.image_path))
             self.cImage = np.copy(self.img)
@@ -207,27 +208,27 @@ class ReadTableImage:
         return [min_x, min_y, max_x, max_y]
 
     def __overlapping_filter(self, lines: list, sorting_index: int, overlapping_tolerance=None) -> list:
-        filtered_lines = []
         combined_lines = []
         line_dict = {}
 
         lines = sorted(lines, key=lambda x: x[sorting_index])
         separation = overlapping_tolerance
+        j = 0
         for i in range(len(lines)):
             l_curr = lines[i]
             if i > 0:
                 l_prev = lines[i - 1]
 
                 if (l_curr[sorting_index] - l_prev[sorting_index]) > separation:
-                    filtered_lines.append(l_curr)
-                    line_dict.update({len(filtered_lines): [l_curr]})
+                    j += 1
+                    line_dict.update({j: [l_curr]})
 
                 else:
-                    array = line_dict.get(len(filtered_lines))
+                    array = line_dict.get(j)
                     array.append(list(l_curr))
             else:
-                filtered_lines.append(l_curr)
-                line_dict.update({len(filtered_lines): [l_curr]})
+                j += 1
+                line_dict.update({j: [l_curr]})
 
         for key, value in line_dict.items():
             if sorting_index == 1:
@@ -360,7 +361,3 @@ class ReadTableImage:
                 for item in line:
                     row += str(item) + ','
                 file.write(row + '\n')
-
-
-
-
