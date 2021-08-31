@@ -16,6 +16,7 @@ class ReadTableImage:
             self.img_height, self.img_width, self.img_channels = self.img.shape
         except cv2.error:
             raise cv2.error('Incorrect path to image')
+        self.lines = None
         self.chart_lines = []
         self.horizontal_lines = []
         self.vertical_lines = []
@@ -29,7 +30,7 @@ class ReadTableImage:
         self.morph_img()
 
     def auto_resize_image(self):
-        scalar_options = [int(7000/self.img_height), int(7000/self.img_width)]
+        scalar_options = [int(6000/self.img_height), int(6000/self.img_width)]
         scalar = min(scalar_options)
         if scalar <= 0:
             scalar = 1
@@ -94,7 +95,7 @@ class ReadTableImage:
         try:
 
             self.lines = cv2.HoughLinesP(self.img_morph, rho, theta, threshold, None, min_line_length, max_line_gap)
-            self.img_line = np.copy(self.cImage)
+            img_line = np.copy(self.cImage)
 
             if self.lines is not None:
                 for i in range(0, len(self.lines)):
@@ -102,10 +103,10 @@ class ReadTableImage:
                     self.chart_lines.append(l)
 
             for i, line in enumerate(self.chart_lines):
-                cv2.line(self.img_line, (line[0], line[1]), (line[2], line[3]), (0, 255, 0), 3, cv2.LINE_AA)
+                cv2.line(img_line, (line[0], line[1]), (line[2], line[3]), (0, 255, 0), 3, cv2.LINE_AA)
 
             if self.show:
-                cv2.imshow("with_line", self.img_line)
+                cv2.imshow("with_line", img_line)
                 cv2.waitKey(0)
                 cv2.destroyWindow("with_line")
         except AttributeError:
@@ -192,6 +193,7 @@ class ReadTableImage:
         return combined_lines
 
     def merge_lines(self, vert_tolerance=100, horizontal_tolerance=100, overlap_tolerance=50) -> None:
+        merge_lines = np.copy(self.cImage)
         if self.lines is not None:
             for i in range(0, len(self.lines)):
                 ln = self.lines[i][0]
@@ -203,16 +205,16 @@ class ReadTableImage:
             self.vertical_lines = self.__overlapping_filter(lines=self.vertical_lines, sorting_index=0, overlapping_tolerance=overlap_tolerance)
 
         for i, line in enumerate(self.horizontal_lines):
-            cv2.line(self.cImage, (line[0], line[1]), (line[2], line[3]), (0, 255, 20), 3, cv2.LINE_AA)
-            cv2.putText(self.cImage, str(i) + "h", (line[0] + 5, line[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1,
+            cv2.line(merge_lines, (line[0], line[1]), (line[2], line[3]), (0, 255, 20), 3, cv2.LINE_AA)
+            cv2.putText(merge_lines, str(i) + "h", (line[0] + 5, line[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1,
                         cv2.LINE_AA)
 
         for i, line in enumerate(self.vertical_lines):
-            cv2.line(self.cImage, (line[0], line[1]), (line[2], line[3]), (0, 0, 255), 3, cv2.LINE_AA)
-            cv2.putText(self.cImage, str(i) + "v", (line[0], line[1] + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1,
+            cv2.line(merge_lines, (line[0], line[1]), (line[2], line[3]), (0, 0, 255), 3, cv2.LINE_AA)
+            cv2.putText(merge_lines, str(i) + "v", (line[0], line[1] + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1,
                         cv2.LINE_AA)
         if self.show:
-            cv2.imshow("with_map", self.cImage)
+            cv2.imshow("with_map", merge_lines)
             cv2.waitKey(0)
             cv2.destroyWindow("with_map")
 
@@ -223,7 +225,10 @@ class ReadTableImage:
     @staticmethod
     def __read_box(img) -> str:
 
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        kernel = np.ones((3, 3), np.uint8)
+        img_dilated = cv2.dilate(img, kernel, iterations=1)
+        img_blurred = cv2.GaussianBlur(img_dilated, (0, 0), 3)
+        gray = cv2.cvtColor(img_blurred, cv2.COLOR_BGR2GRAY)
         sharpen_kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
         sharpen = cv2.filter2D(gray, -1, sharpen_kernel)
         thresh = cv2.threshold(sharpen, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
@@ -252,7 +257,7 @@ class ReadTableImage:
 
                 try:
 
-                    cropped_img = self.img_dilated[y_up:y_down, x_left:x_right]
+                    cropped_img = self.cImage[y_up:y_down, x_left:x_right]
                     if self.show:
                         cv2.imshow("crop", cropped_img)
                         cv2.waitKey(0)
@@ -271,7 +276,7 @@ class ReadTableImage:
 
                     try:
 
-                        cropped_img = self.img_dilated[y_up:y_down, x_left:x_right]
+                        cropped_img = self.cImage[y_up:y_down, x_left:x_right]
                         if self.show:
                             cv2.imshow("crop", cropped_img)
                             cv2.waitKey(0)
