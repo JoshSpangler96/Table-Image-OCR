@@ -1,8 +1,6 @@
 from read_chart_ocr import ReadChartImage
-import pdf_to_image
 
 #image path
-#filename = '263586_5.png'
 filename = 'test_3.png'
 
 img = ReadChartImage(image_path=filename, tesseract_path=(r'C:\Users\JSPANGLER\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'), show=False)
