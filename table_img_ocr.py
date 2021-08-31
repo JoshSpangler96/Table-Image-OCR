@@ -47,8 +47,8 @@ class ReadTableImage:
         k_size = 3
         kernel = np.ones((k_size, k_size), np.uint8)
         src = self.img
-        self.img_dilated = cv2.dilate(src, kernel, iterations=1)
-        self.img = self.img_dilated
+        img_dilated = cv2.dilate(src, kernel, iterations=1)
+        self.img = img_dilated
         if self.show:
             cv2.imshow("dilate", self.img)
             cv2.waitKey(0)
@@ -56,8 +56,8 @@ class ReadTableImage:
 
     def gaussian_blur(self) -> None:
         # gaussian blur
-        self.img_blurred = cv2.GaussianBlur(self.img, (0, 0), 3)
-        self.img = self.img_blurred
+        img_blurred = cv2.GaussianBlur(self.img, (0, 0), 3)
+        self.img = img_blurred
         if self.show:
             cv2.imshow("blur", self.img)
             cv2.waitKey(0)
@@ -65,8 +65,8 @@ class ReadTableImage:
 
     def grayscale(self) -> None:
         # grayscale
-        self.img_gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
-        self.img = self.img_gray
+        img_gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
+        self.img = img_gray
         if self.show:
             cv2.imshow("gray", self.img)
             cv2.waitKey(0)
@@ -74,8 +74,8 @@ class ReadTableImage:
 
     def canny_img(self) -> None:
         # canny alteration
-        self.img_canny = cv2.Canny(self.img, 50, 150)
-        self.img = self.img_canny
+        img_canny = cv2.Canny(self.img, 50, 150)
+        self.img = img_canny
         if self.show:
             cv2.imshow("canny", self.img)
             cv2.waitKey(0)
@@ -84,33 +84,30 @@ class ReadTableImage:
     def morph_img(self) -> None:
         # morph image
         kernel = np.ones((5, 5), np.uint8)
-        self.img_morph = cv2.morphologyEx(self.img, cv2.MORPH_CLOSE, kernel, iterations=2)
-        self.img = self.img_morph
+        img_morph = cv2.morphologyEx(self.img, cv2.MORPH_CLOSE, kernel, iterations=2)
+        self.img = img_morph
         if self.show:
             cv2.imshow("canny", self.img)
             cv2.waitKey(0)
             cv2.destroyWindow("canny")
 
-    def create_lines(self, rho=1, threshold=50, min_line_length=500, theta=(np.pi/180), max_line_gap=20) -> None:
-        try:
+    def create_lines(self, rho=1, threshold=50, min_line_length=200, theta=(np.pi/180), max_line_gap=20) -> None:
 
-            self.lines = cv2.HoughLinesP(self.img_morph, rho, theta, threshold, None, min_line_length, max_line_gap)
-            img_line = np.copy(self.cImage)
+        self.lines = cv2.HoughLinesP(self.img, rho, theta, threshold, None, min_line_length, max_line_gap)
+        img_line = np.copy(self.cImage)
 
-            if self.lines is not None:
-                for i in range(0, len(self.lines)):
-                    l = self.lines[i][0]
-                    self.chart_lines.append(l)
+        if self.lines is not None:
+            for i in range(0, len(self.lines)):
+                ln = self.lines[i][0]
+                self.chart_lines.append(ln)
 
-            for i, line in enumerate(self.chart_lines):
-                cv2.line(img_line, (line[0], line[1]), (line[2], line[3]), (0, 255, 0), 3, cv2.LINE_AA)
+        for i, line in enumerate(self.chart_lines):
+            cv2.line(img_line, (line[0], line[1]), (line[2], line[3]), (0, 255, 0), 3, cv2.LINE_AA)
 
-            if self.show:
-                cv2.imshow("with_line", img_line)
-                cv2.waitKey(0)
-                cv2.destroyWindow("with_line")
-        except AttributeError:
-            raise Exception('Please preprocess the image before creating lines. use the pre_process_image() function')
+        if self.show:
+            cv2.imshow("with_line", img_line)
+            cv2.waitKey(0)
+            cv2.destroyWindow("with_line")
 
     @staticmethod
     def __is_vertical(line, vert_tolerance: int) -> bool:
@@ -165,14 +162,14 @@ class ReadTableImage:
         combined_lines = []
         line_dict = {}
 
-        lines = sorted(lines, key=lambda lines: lines[sorting_index])
+        lines = sorted(lines, key=lambda x: x[sorting_index])
         separation = overlapping_tolerance
         for i in range(len(lines)):
             l_curr = lines[i]
-            if (i > 0):
+            if i > 0:
                 l_prev = lines[i - 1]
 
-                if ((l_curr[sorting_index] - l_prev[sorting_index]) > separation):
+                if (l_curr[sorting_index] - l_prev[sorting_index]) > separation:
                     filtered_lines.append(l_curr)
                     line_dict.update({len(filtered_lines): [l_curr]})
 
@@ -201,8 +198,16 @@ class ReadTableImage:
                     self.vertical_lines.append(ln)
                 elif self.__is_horizontal(ln, horizontal_tolerance):
                     self.horizontal_lines.append(ln)
-            self.horizontal_lines = self.__overlapping_filter(lines=self.horizontal_lines, sorting_index=1, overlapping_tolerance=overlap_tolerance)
-            self.vertical_lines = self.__overlapping_filter(lines=self.vertical_lines, sorting_index=0, overlapping_tolerance=overlap_tolerance)
+            self.horizontal_lines = self.__overlapping_filter(
+                lines=self.horizontal_lines,
+                sorting_index=1,
+                overlapping_tolerance=overlap_tolerance
+            )
+            self.vertical_lines = self.__overlapping_filter(
+                lines=self.vertical_lines,
+                sorting_index=0,
+                overlapping_tolerance=overlap_tolerance
+            )
 
         for i, line in enumerate(self.horizontal_lines):
             cv2.line(merge_lines, (line[0], line[1]), (line[2], line[3]), (0, 255, 20), 3, cv2.LINE_AA)
@@ -220,7 +225,11 @@ class ReadTableImage:
 
     def create_merge_lines(self, vert_tolerance=100, horizontal_tolerance=100, overlap_tolerance=50) -> None:
         self.create_lines()
-        self.merge_lines(vert_tolerance=vert_tolerance, horizontal_tolerance=horizontal_tolerance, overlap_tolerance=overlap_tolerance)
+        self.merge_lines(
+            vert_tolerance=vert_tolerance,
+            horizontal_tolerance=horizontal_tolerance,
+            overlap_tolerance=overlap_tolerance
+        )
 
     @staticmethod
     def __read_box(img) -> str:
@@ -243,7 +252,7 @@ class ReadTableImage:
     def read_chart(self) -> list:
 
         # tesseract path
-        if self.tesseract_path != None:
+        if self.tesseract_path is not None:
             pytesseract.pytesseract.tesseract_cmd = self.tesseract_path
 
         for i in range(len(self.horizontal_lines) - 1):
@@ -296,10 +305,10 @@ class ReadTableImage:
         csv_results = os.path.join(dir_path, 'results.csv')
         with open(csv_results, 'w') as file:
             for line in self.results:
-                str = ''
+                row = ''
                 for item in line:
-                    str += item + ','
-                file.write(str + '\n')
+                    row += str(item) + ','
+                file.write(row + '\n')
 
 
 
