@@ -9,6 +9,8 @@ class ReadTableImage:
     def __init__(self, image_path: str, tesseract_path=None, show=False):
         self.image_path = image_path
         self.tesseract_path = tesseract_path
+        if self.tesseract_path is not None:
+            pytesseract.pytesseract.tesseract_cmd = self.tesseract_path
         self.show = show
         try:
             self.img = cv2.imread(cv2.samples.findFile(self.image_path))
@@ -22,12 +24,13 @@ class ReadTableImage:
         self.vertical_lines = []
         self.results = []
 
-    def pre_process_image(self) -> None:
+    def pre_process_image(self):
         self.dilate_img()
         self.gaussian_blur()
         self.grayscale()
         self.canny_img()
-        self.morph_img()
+        img = self.morph_img()
+        return img
 
     def auto_resize_image(self):
         scalar_options = [int(6000/self.img_height), int(6000/self.img_width)]
@@ -42,58 +45,98 @@ class ReadTableImage:
             cv2.waitKey(0)
             cv2.destroyWindow("resize")
 
-    def dilate_img(self) -> None:
+    def dilate_img(self, img=None):
         # dilated
+        if img is not None:
+            self.img = img
         k_size = 3
         kernel = np.ones((k_size, k_size), np.uint8)
-        src = self.img
-        img_dilated = cv2.dilate(src, kernel, iterations=1)
-        self.img = img_dilated
+        try:
+            img_dilated = cv2.dilate(self.img, kernel, iterations=1)
+            self.img = img_dilated
+        except AttributeError:
+            raise AttributeError('img must be a cv2 object')
+
         if self.show:
             cv2.imshow("dilate", self.img)
             cv2.waitKey(0)
             cv2.destroyWindow("dilate")
 
-    def gaussian_blur(self) -> None:
+        return img_dilated
+
+    def gaussian_blur(self, img=None):
         # gaussian blur
-        img_blurred = cv2.GaussianBlur(self.img, (0, 0), 3)
+        if img is not None:
+            self.img = img
+        try:
+            img_blurred = cv2.GaussianBlur(self.img, (0, 0), 3)
+        except AttributeError:
+            raise AttributeError('img must be a cv2 object')
         self.img = img_blurred
         if self.show:
             cv2.imshow("blur", self.img)
             cv2.waitKey(0)
             cv2.destroyWindow("blur")
 
-    def grayscale(self) -> None:
+        return img_blurred
+
+    def grayscale(self, img=None):
         # grayscale
-        img_gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
+        if img is not None:
+            self.img = img
+        try:
+            img_gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
+        except AttributeError:
+            raise AttributeError('img must be a cv2 object')
         self.img = img_gray
         if self.show:
             cv2.imshow("gray", self.img)
             cv2.waitKey(0)
             cv2.destroyWindow("gray")
 
-    def canny_img(self) -> None:
+        return img_gray
+
+    def canny_img(self, img=None):
         # canny alteration
-        img_canny = cv2.Canny(self.img, 50, 150)
+        if img is not None:
+            self.img = img
+        try:
+            img_canny = cv2.Canny(self.img, 50, 150)
+        except AttributeError:
+            raise AttributeError('img must be a cv2 object')
         self.img = img_canny
         if self.show:
             cv2.imshow("canny", self.img)
             cv2.waitKey(0)
             cv2.destroyWindow("canny")
 
-    def morph_img(self) -> None:
+        return img_canny
+
+    def morph_img(self, img=None):
         # morph image
+        if img is not None:
+            self.img = img
         kernel = np.ones((5, 5), np.uint8)
-        img_morph = cv2.morphologyEx(self.img, cv2.MORPH_CLOSE, kernel, iterations=2)
+        try:
+            img_morph = cv2.morphologyEx(self.img, cv2.MORPH_CLOSE, kernel, iterations=2)
+        except AttributeError:
+            raise AttributeError('img must be a cv2 object')
         self.img = img_morph
         if self.show:
             cv2.imshow("canny", self.img)
             cv2.waitKey(0)
             cv2.destroyWindow("canny")
 
-    def create_lines(self, rho=1, threshold=50, min_line_length=200, theta=(np.pi/180), max_line_gap=20) -> None:
+        return img_morph
 
-        self.lines = cv2.HoughLinesP(self.img, rho, theta, threshold, None, min_line_length, max_line_gap)
+    def create_lines(self, rho=1, threshold=50, min_line_length=500, theta=(np.pi/180), max_line_gap=20, img=None):
+
+        if img is not None:
+            self.img = img
+        try:
+            self.lines = cv2.HoughLinesP(self.img, rho, theta, threshold, None, min_line_length, max_line_gap)
+        except AttributeError:
+            raise AttributeError('img must be a cv2 object')
         img_line = np.copy(self.cImage)
 
         if self.lines is not None:
@@ -108,6 +151,8 @@ class ReadTableImage:
             cv2.imshow("with_line", img_line)
             cv2.waitKey(0)
             cv2.destroyWindow("with_line")
+
+        return img_line
 
     @staticmethod
     def __is_vertical(line, vert_tolerance: int) -> bool:
@@ -189,7 +234,7 @@ class ReadTableImage:
 
         return combined_lines
 
-    def merge_lines(self, vert_tolerance=100, horizontal_tolerance=100, overlap_tolerance=50) -> None:
+    def merge_lines(self, vert_tolerance=100, horizontal_tolerance=100, overlap_tolerance=50):
         merge_lines = np.copy(self.cImage)
         if self.lines is not None:
             for i in range(0, len(self.lines)):
@@ -223,6 +268,8 @@ class ReadTableImage:
             cv2.waitKey(0)
             cv2.destroyWindow("with_map")
 
+        return merge_lines
+
     def create_merge_lines(self, vert_tolerance=100, horizontal_tolerance=100, overlap_tolerance=50) -> None:
         self.create_lines()
         self.merge_lines(
@@ -232,7 +279,7 @@ class ReadTableImage:
         )
 
     @staticmethod
-    def __read_box(img) -> str:
+    def read_img(img) -> str:
 
         kernel = np.ones((3, 3), np.uint8)
         img_dilated = cv2.dilate(img, kernel, iterations=1)
@@ -245,15 +292,11 @@ class ReadTableImage:
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
         close = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=1)
         result = 255 - close
-        txt = pytesseract.image_to_string(result, lang='eng', config='--psm 12 --oem 3').strip()
+        txt = pytesseract.image_to_string(result, config='--psm 12 --oem 3').strip()
 
         return txt
 
     def read_chart(self) -> list:
-
-        # tesseract path
-        if self.tesseract_path is not None:
-            pytesseract.pytesseract.tesseract_cmd = self.tesseract_path
 
         for i in range(len(self.horizontal_lines) - 1):
             y_up = self.horizontal_lines[i][1]
@@ -273,9 +316,10 @@ class ReadTableImage:
                         cv2.destroyWindow("crop")
                 except AttributeError:
                     raise Exception(
-                        'Please preprocess the image before creating lines. use the pre_process_image() function')
+                        'Please preprocess the image before creating lines. use the pre_process_image() function'
+                    )
 
-                result = self.__read_box(cropped_img)
+                result = self.read_img(cropped_img)
                 lst.append(result)
 
             else:
@@ -291,9 +335,11 @@ class ReadTableImage:
                             cv2.waitKey(0)
                             cv2.destroyWindow("crop")
                     except AttributeError:
-                        raise Exception('Please preprocess the image before creating lines. use the pre_process_image() function')
+                        raise Exception(
+                            'Please preprocess the image before creating lines. use the pre_process_image() function'
+                        )
 
-                    result = self.__read_box(cropped_img)
+                    result = self.read_img(cropped_img)
                     lst.append(result)
 
             self.results.append(lst)
@@ -306,8 +352,9 @@ class ReadTableImage:
         with open(csv_results, 'w') as file:
             for line in self.results:
                 row = ''
-                for item in line:
-                    row += str(item) + ','
+                for i in range(len(line)):
+                    line[i] = str(line[i]).replace('|', '')
+                    row += str(line[i]) + ','
                 file.write(row + '\n')
 
 
