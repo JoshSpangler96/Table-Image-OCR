@@ -1,6 +1,6 @@
-# png_table_ocr
+# table_img_ocr
 Description:
-Uses Optical Character Recognition (OCR) to read a table from a 'png'
+Uses Optical Character Recognition (OCR) to read a table from an image
 
 ## Features
 - Provides image preprocessing options to get most accurate OCR
@@ -12,6 +12,7 @@ Uses Optical Character Recognition (OCR) to read a table from a 'png'
 ## Setup
 
 ```bash
+pip install os
 pip install numpy
 pip install opencv-python
 pip install pytesseract
@@ -35,7 +36,7 @@ brew install tesseract
 
 ### On Windows 
 download binary from https://github.com/UB-Mannheim/tesseract/wiki. then add
-```bash
+```python
 pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files (x86)\\Tesseract-OCR\\tesseract.exe'
 ```
  to your script. (replace path of tesseract binary if necessary)
@@ -50,6 +51,7 @@ pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files (x86)\\Tesseract-OCR\
  Initializes the object
  image_path: str -> path to chart image you are trying to read
  tesseract_path: str -> On Windows you will need to give a path to tesseract.exe
+ show: bool -> Boolean to control whether the images are shown during the execution of methods
 
 ### dilate_img
  
@@ -180,16 +182,17 @@ Resizes the image so that either the height, width, or both are ~7000
  ## Example Usage
  
 ```python
-from png_table_ocr import ReadTableImage
+from table_img_ocr import ReadTableImage
 
-filename = 'test_1.png'
+#image path
+filename = 'test_3.png'
 
 img = ReadTableImage(image_path=filename, tesseract_path=(r'C:\Users\JSPANGLER\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'), show=False)
 img.auto_resize_image()
 img.pre_process_image()
 img.create_merge_lines(vert_tolerance=100, horizontal_tolerance=50, overlap_tolerance=100)
 chart_data = img.read_chart()
+img.create_csv()
 for line in chart_data:
     print(line)
-
 ```
