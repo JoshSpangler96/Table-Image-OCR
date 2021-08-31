@@ -1,11 +1,12 @@
 import pytesseract
 import numpy as np
+import os
 import cv2
 
 
 class ReadTableImage:
 
-    def __init__(self, image_path: str, tesseract_path: str, show=False):
+    def __init__(self, image_path: str, tesseract_path=None, show=False):
         self.image_path = image_path
         self.tesseract_path = tesseract_path
         self.show = show
@@ -18,6 +19,7 @@ class ReadTableImage:
         self.chart_lines = []
         self.horizontal_lines = []
         self.vertical_lines = []
+        self.results = []
 
     def pre_process_image(self) -> None:
         self.dilate_img()
@@ -219,10 +221,8 @@ class ReadTableImage:
         self.merge_lines(vert_tolerance=vert_tolerance, horizontal_tolerance=horizontal_tolerance, overlap_tolerance=overlap_tolerance)
 
     @staticmethod
-    def __read_box(img, tesseract_path: str) -> str:
+    def __read_box(img) -> str:
 
-        # tesseract path
-        pytesseract.pytesseract.tesseract_cmd = tesseract_path
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         sharpen_kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
         sharpen = cv2.filter2D(gray, -1, sharpen_kernel)
@@ -236,7 +236,11 @@ class ReadTableImage:
         return txt
 
     def read_chart(self) -> list:
-        embed_lst = []
+
+        # tesseract path
+        if self.tesseract_path != None:
+            pytesseract.pytesseract.tesseract_cmd = self.tesseract_path
+
         for i in range(len(self.horizontal_lines) - 1):
             y_up = self.horizontal_lines[i][1]
             y_down = self.horizontal_lines[i + 1][1]
@@ -257,7 +261,7 @@ class ReadTableImage:
                     raise Exception(
                         'Please preprocess the image before creating lines. use the pre_process_image() function')
 
-                result = self.__read_box(cropped_img, tesseract_path=self.tesseract_path)
+                result = self.__read_box(cropped_img)
                 lst.append(result)
 
             else:
@@ -275,12 +279,22 @@ class ReadTableImage:
                     except AttributeError:
                         raise Exception('Please preprocess the image before creating lines. use the pre_process_image() function')
 
-                    result = self.__read_box(cropped_img, tesseract_path=self.tesseract_path)
+                    result = self.__read_box(cropped_img)
                     lst.append(result)
 
-            embed_lst.append(lst)
+            self.results.append(lst)
 
-        return embed_lst
+        return self.results
+
+    def create_csv(self):
+        dir_path = os.path.dirname(__file__)
+        csv_results = os.path.join(dir_path, 'results.csv')
+        with open(csv_results, 'w') as file:
+            for line in self.results:
+                str = ''
+                for item in line:
+                    str += item + ','
+                file.write(str + '\n')
 
 
 
