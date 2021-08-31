@@ -1,6 +1,6 @@
 # table_img_ocr
 Description:
-Uses Optical Character Recognition (OCR) to read a table from a 'png'
+Uses Optical Character Recognition (OCR) to read a table from an image
 
 ## Features
 - Provides image preprocessing options to get most accurate OCR
